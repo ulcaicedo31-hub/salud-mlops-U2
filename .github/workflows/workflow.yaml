@@ -54,7 +54,7 @@ jobs:
   publicar:
     name: Publicar imagen en GitHub Packages
     needs: pruebas
-    if: github.event_name == 'push'
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.pruebas.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
