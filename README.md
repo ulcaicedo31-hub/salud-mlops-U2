@@ -1,18 +1,15 @@
-# Taller 1 — Pipeline de MLOps + imagen Docker
+# Salud MLOps — Unidad 2
 
-Entrega para el problema de enfermedades comunes y huérfanas. La propuesta completa, con diagrama y etapas, se encuentra en [PIPELINE.md](pipeline/PIPELINE.md).
+Servicio académico de clasificación simulada para el ejercicio sobre enfermedades comunes y huérfanas.
 
 ## Finalidad
 
-Servicio académico con una página web y una API que reciben tres valores y devuelven uno de los cuatro estados requeridos. La función es determinista y ficticia: no se entrenó un modelo, de acuerdo con el enunciado. No usar con pacientes ni interpretar sus resultados como diagnósticos.
+Servicio académico con una página web y una API que reciben tres valores y devuelven uno de los cinco estados requeridos. La función es determinista y ficticia: no se entrenó un modelo, de acuerdo con el enunciado. No usar con pacientes ni interpretar sus resultados como diagnósticos.
 
 ## Archivos
 
 ```text
-entrega_mlops/
-  pipeline/
-    PIPELINE.md             Propuesta y explicación de etapas
-    diagrama_pipeline.png   Imagen del pipeline
+salud-mlops-U2/
   README.md                 Instrucciones de construcción y uso
   Dockerfile                Construcción y arranque del servicio
   .dockerignore             Exclusiones del contexto
@@ -26,17 +23,17 @@ No requiere bibliotecas externas: utiliza Python y su biblioteca estándar.
 ## Construir y ejecutar con Docker
 
 1. Instalar Docker Engine o Docker Desktop y arrancarlo. En Windows, utilizar contenedores Linux. Se necesita conexión para descargar la imagen base la primera vez.
-2. Extraer el ZIP y abrir una terminal **dentro de `entrega_mlops`**, donde está el Dockerfile.
+2. Abrir una terminal en la raíz del repositorio, donde está el Dockerfile.
 3. Construir la imagen:
 
 ```sh
-docker build -t mlops-salud:1.0 .
+docker build -t mlops-salud:2.0 .
 ```
 
 4. Lanzar el servicio:
 
 ```sh
-docker run --rm -d --name mlops-salud -p 127.0.0.1:5000:5000 mlops-salud:1.0
+docker run --rm -d --name mlops-salud -p 127.0.0.1:5000:5000 mlops-salud:2.0
 ```
 
 5. Abrir [http://localhost:5000](http://localhost:5000), completar los tres campos y pulsar **Obtener respuesta**. El resultado aparece debajo del botón.
@@ -61,11 +58,12 @@ El estado puede aparecer como `starting` durante los primeros segundos. El puert
 Se exigen exactamente estos tres campos; no se aceptan cadenas ni booleanos. Sin síntomas, intensidad y duración deben ser cero. Las reglas se evalúan en este orden:
 
 1. Cantidad cero, intensidad cero y duración cero: **NO ENFERMO**.
-2. Con síntomas y duración ≥ 90: **ENFERMEDAD CRÓNICA**.
-3. Con síntomas, duración < 90 e intensidad ≥ 7 o cantidad ≥ 5: **ENFERMEDAD AGUDA**.
-4. Los demás casos válidos: **ENFERMEDAD LEVE**.
+2. Intensidad ≥ 9, duración ≥ 180 y cantidad ≥ 8: **ENFERMEDAD TERMINAL**.
+3. En los demás casos, duración ≥ 90: **ENFERMEDAD CRÓNICA**.
+4. En los demás casos, intensidad ≥ 7 o cantidad ≥ 5: **ENFERMEDAD AGUDA**.
+5. Los demás casos válidos: **ENFERMEDAD LEVE**.
 
-Los umbrales son decisiones de programación sin fundamento clínico. La prioridad de duración resuelve los casos con duración e intensidad altas.
+Los umbrales son decisiones de programación sin fundamento clínico.
 
 | Intensidad | Días | Cantidad | Respuesta esperada |
 |---:|---:|---:|---|
@@ -73,10 +71,11 @@ Los umbrales son decisiones de programación sin fundamento clínico. La priorid
 | 3 | 5 | 2 | ENFERMEDAD LEVE |
 | 8 | 5 | 2 | ENFERMEDAD AGUDA |
 | 3 | 120 | 2 | ENFERMEDAD CRÓNICA |
+| 9 | 180 | 8 | ENFERMEDAD TERMINAL |
 
 ## API y ejemplos
 
-`GET /health` devuelve HTTP 200 y `{"estado":"ok","version":"simulador-1.0"}`.
+`GET /health` devuelve HTTP 200 y `{"estado":"ok","version":"simulador-2.0"}`.
 
 `POST /predecir` recibe JSON. Ejemplo en PowerShell:
 
@@ -94,7 +93,7 @@ curl -X POST http://localhost:5000/predecir -H 'Content-Type: application/json' 
 Respuesta esperada, HTTP 200:
 
 ```json
-{"estado":"ENFERMEDAD AGUDA","version":"simulador-1.0","aviso":"Simulación académica sin validez clínica"}
+{"estado":"ENFERMEDAD AGUDA","version":"simulador-2.0","aviso":"Simulación académica sin validez clínica"}
 ```
 
 Datos inválidos o JSON mal formado devuelven HTTP 400 con `error`; un tipo de contenido diferente devuelve 415; rutas inexistentes devuelven 404. Se limita el cuerpo a 4096 bytes. La aplicación no almacena las entradas.
@@ -111,4 +110,4 @@ Abrir http://localhost:5000 y detener con Ctrl+C. No se necesita instalar biblio
 
 ## Comprobación manual
 
-Introducir en el formulario los cuatro ejemplos de la tabla anterior y comprobar que cada uno devuelve el estado esperado. La propuesta del pipeline está en `pipeline/PIPELINE.md` y su diagrama en `pipeline/diagrama_pipeline.png`.
+Introducir en el formulario los cinco ejemplos de la tabla anterior y comprobar que cada uno devuelve el estado esperado.
