@@ -2,12 +2,13 @@
 <html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Simulador MLOps</title>
 <style>body{font:17px system-ui;background:#edf3f7;color:#18334a;margin:0;padding:30px}main{max-width:650px;margin:auto;background:white;padding:32px;border-radius:16px}label{display:block;margin:20px 0}input{display:block;padding:10px;width:90%;margin-top:8px}button{background:#176b78;color:white;border:0;padding:14px;border-radius:8px;font:inherit}output{display:block;margin-top:24px;font-weight:600}.aviso{background:#fff3cd;padding:16px}</style>
-<main><p>Machine Learning Operations · Taller 1</p><h1>Consulta de estado simulado</h1>
+<main><p>Machine Learning Operations · Unidad 2</p><h1>Consulta de estado simulado</h1>
 <p class="aviso">Demostración académica. Las reglas son ficticias y no sirven para diagnosticar ni decidir tratamientos. Introduzca únicamente datos de prueba.</p>
 <form id="consulta">
 <label>Intensidad de síntomas (0–10)<input name="intensidad" type="number" min="0" max="10" step="0.1" value="3" required></label>
 <label>Duración en días (0–36500)<input name="duracion_dias" type="number" min="0" max="36500" step="0.1" value="5" required></label>
 <label>Cantidad de síntomas (0–100)<input name="cantidad_sintomas" type="number" min="0" max="100" step="1" value="2" required></label>
 <button>Obtener respuesta</button></form><output id="resultado" aria-live="polite"></output>
-<p>Reglas: sin síntomas → NO ENFERMO; con síntomas y duración ≥ 90 días → CRÓNICA; en los demás casos, intensidad ≥ 7 o cantidad ≥ 5 → AGUDA; de lo contrario → LEVE. La duración tiene prioridad.</p></main>
+<p>Si la intensidad es ≥ 9, la duración ≥ 180 días y hay ≥ 8 síntomas, el simulador devuelve ENFERMEDAD TERMINAL antes de evaluar las demás categorías.</p>
+<p>Para los demás casos: sin síntomas → NO ENFERMO; con síntomas y duración ≥ 90 días → CRÓNICA; en los demás casos, intensidad ≥ 7 o cantidad ≥ 5 → AGUDA; de lo contrario → LEVE.</p></main>
 <script>document.getElementById('consulta').addEventListener('submit',async e=>{e.preventDefault();const out=document.getElementById('resultado');out.textContent='Procesando…';try{const datos=Object.fromEntries([...new FormData(e.target)].map(([k,v])=>[k,Number(v)]));const r=await fetch('/predecir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)});const d=await r.json();out.textContent=r.ok?d.estado:d.error}catch{out.textContent='No se pudo conectar con el servicio.'}});</script></html>
