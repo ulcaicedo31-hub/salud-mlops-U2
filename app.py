@@ -1,12 +1,16 @@
 """Servicio local de demostración sin dependencias externas."""
 import json
 import os
+import sqlite3
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from historial import Historial
 from modelo import predecir, VERSION
 
 
 class Handler(BaseHTTPRequestHandler):
+    historial = Historial(Path(os.getenv("HISTORIAL_DB", "datos/predicciones.sqlite3")))
+
     def respuesta(self, codigo, contenido, tipo="application/json; charset=utf-8"):
         datos = (json.dumps(contenido, ensure_ascii=False).encode("utf-8")
                  if isinstance(contenido, dict) else contenido)
@@ -23,6 +27,13 @@ class Handler(BaseHTTPRequestHandler):
                            "text/html; charset=utf-8")
         elif self.path == "/health":
             self.respuesta(200, {"estado": "ok", "version": VERSION})
+        elif self.path == "/estadisticas":
+            try:
+                reporte = self.historial.reporte()
+            except (OSError, sqlite3.Error):
+                self.respuesta(503, {"error": "Historial no disponible"})
+                return
+            self.respuesta(200, reporte)
         else:
             self.respuesta(404, {"error": "Ruta no encontrada"})
 
@@ -44,6 +55,11 @@ class Handler(BaseHTTPRequestHandler):
             estado = predecir(**datos)
         except (ValueError, UnicodeError) as error:
             self.respuesta(400, {"error": str(error)})
+            return
+        try:
+            self.historial.registrar(estado)
+        except (OSError, sqlite3.Error):
+            self.respuesta(503, {"error": "Historial no disponible"})
             return
         self.respuesta(200, {"estado": estado, "version": VERSION,
                              "aviso": "Simulación académica sin validez clínica"})
