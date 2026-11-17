@@ -14,6 +14,7 @@ salud-mlops-U2/
   Dockerfile                Construcción y arranque del servicio
   .dockerignore             Exclusiones del contexto
   modelo.py                 Función simulada
+  historial.py              Registro persistente y reporte SQLite
   app.py                    Servicio HTTP y API
   index.html                Formulario web
 ```
@@ -33,11 +34,12 @@ docker build -t mlops-salud:2.0 .
 4. Lanzar el servicio:
 
 ```sh
-docker run --rm -d --name mlops-salud -p 127.0.0.1:5000:5000 mlops-salud:2.0
+docker run --rm -d --name mlops-salud -p 127.0.0.1:5000:5000 -v salud-mlops-datos:/app/datos mlops-salud:2.0
 ```
 
 5. Abrir [http://localhost:5000](http://localhost:5000), completar los tres campos y pulsar **Obtener respuesta**. El resultado aparece debajo del botón.
-6. Consultar estado y detener:
+6. Pulsar **Consultar estadísticas** para ver el reporte. El volumen `salud-mlops-datos` conserva el historial al recrear el contenedor.
+7. Consultar estado y detener:
 
 ```sh
 docker ps
@@ -96,7 +98,15 @@ Respuesta esperada, HTTP 200:
 {"estado":"ENFERMEDAD AGUDA","version":"simulador-2.0","aviso":"Simulación académica sin validez clínica"}
 ```
 
-Datos inválidos o JSON mal formado devuelven HTTP 400 con `error`; un tipo de contenido diferente devuelve 415; rutas inexistentes devuelven 404. Se limita el cuerpo a 4096 bytes. La aplicación no almacena las entradas.
+Datos inválidos o JSON mal formado devuelven HTTP 400 con `error`; un tipo de contenido diferente devuelve 415; rutas inexistentes devuelven 404. Se limita el cuerpo a 4096 bytes. Cada predicción válida registra su categoría y fecha UTC en SQLite. Los valores de entrada del formulario quedan fuera del historial. Si el almacenamiento falla, la API devuelve HTTP 503.
+
+`GET /estadisticas` entrega `totales_por_categoria` (incluye las cinco categorías), `ultimas_5_predicciones` (de la más reciente a la más antigua) y `fecha_ultima_prediccion` (fecha ISO 8601 en UTC). Antes de la primera predicción, los conteos son cero, la lista está vacía y la fecha es `null`.
+
+```sh
+curl http://localhost:5000/estadisticas
+```
+
+Al ejecutar con Python, la base queda en `datos/predicciones.sqlite3`. Se puede cambiar su ubicación con la variable de entorno `HISTORIAL_DB`.
 
 ## Ejecución alternativa sin Docker
 

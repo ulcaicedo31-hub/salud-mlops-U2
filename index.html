@@ -10,5 +10,50 @@
 <label>Cantidad de síntomas (0–100)<input name="cantidad_sintomas" type="number" min="0" max="100" step="1" value="2" required></label>
 <button>Obtener respuesta</button></form><output id="resultado" aria-live="polite"></output>
 <p>Si la intensidad es ≥ 9, la duración ≥ 180 días y hay ≥ 8 síntomas, el simulador devuelve ENFERMEDAD TERMINAL antes de evaluar las demás categorías.</p>
-<p>Para los demás casos: sin síntomas → NO ENFERMO; con síntomas y duración ≥ 90 días → CRÓNICA; en los demás casos, intensidad ≥ 7 o cantidad ≥ 5 → AGUDA; de lo contrario → LEVE.</p></main>
-<script>document.getElementById('consulta').addEventListener('submit',async e=>{e.preventDefault();const out=document.getElementById('resultado');out.textContent='Procesando…';try{const datos=Object.fromEntries([...new FormData(e.target)].map(([k,v])=>[k,Number(v)]));const r=await fetch('/predecir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)});const d=await r.json();out.textContent=r.ok?d.estado:d.error}catch{out.textContent='No se pudo conectar con el servicio.'}});</script></html>
+<p>Para los demás casos: sin síntomas → NO ENFERMO; con síntomas y duración ≥ 90 días → CRÓNICA; en los demás casos, intensidad ≥ 7 o cantidad ≥ 5 → AGUDA; de lo contrario → LEVE.</p>
+<section aria-labelledby="titulo-estadisticas">
+<h2 id="titulo-estadisticas">Estadísticas de predicciones</h2>
+<button type="button" id="consultar-estadisticas">Consultar estadísticas</button>
+<p id="fecha-ultima" role="status"></p>
+<div id="reporte" hidden>
+<h3>Totales por categoría</h3>
+<ul id="totales"></ul>
+<h3>Últimas cinco predicciones</h3>
+<ol id="ultimas"></ol>
+</div>
+</section></main>
+<script>document.getElementById('consulta').addEventListener('submit',async e=>{e.preventDefault();const out=document.getElementById('resultado');out.textContent='Procesando…';try{const datos=Object.fromEntries([...new FormData(e.target)].map(([k,v])=>[k,Number(v)]));const r=await fetch('/predecir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)});const d=await r.json();out.textContent=r.ok?d.estado:d.error}catch{out.textContent='No se pudo conectar con el servicio.'}});
+const mostrarLista = (id, filas) => {
+    const lista = document.getElementById(id);
+    lista.replaceChildren(...filas.map(texto => {
+        const item = document.createElement('li');
+        item.textContent = texto;
+        return item;
+    }));
+};
+
+document.getElementById('consultar-estadisticas').addEventListener('click', async () => {
+    const estado = document.getElementById('fecha-ultima');
+    const reporte = document.getElementById('reporte');
+    estado.textContent = 'Consultando…';
+    reporte.hidden = true;
+    try {
+        const respuesta = await fetch('/estadisticas');
+        const datos = await respuesta.json();
+        if (!respuesta.ok) {
+            estado.textContent = datos.error;
+            return;
+        }
+        estado.textContent = datos.fecha_ultima_prediccion
+            ? 'Última predicción (UTC): ' + datos.fecha_ultima_prediccion
+            : 'Todavía no hay predicciones.';
+        mostrarLista('totales', Object.entries(datos.totales_por_categoria)
+            .map(([categoria, total]) => categoria + ': ' + total));
+        mostrarLista('ultimas', datos.ultimas_5_predicciones
+            .map(({categoria, fecha}) => categoria + ' · ' + fecha));
+        reporte.hidden = false;
+    } catch {
+        estado.textContent = 'No se pudo consultar el reporte.';
+    }
+});
+</script></html>
