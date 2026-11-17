@@ -15,6 +15,8 @@ salud-mlops-U2/
   .dockerignore             Exclusiones del contexto
   modelo.py                 Función simulada
   historial.py              Registro persistente y reporte SQLite
+  tests/test_servicio.py    Pruebas del simulador y de la API
+  .github/workflows/workflow.yaml  Flujo de GitHub Actions
   app.py                    Servicio HTTP y API
   index.html                Formulario web
 ```
@@ -121,3 +123,11 @@ Abrir http://localhost:5000 y detener con Ctrl+C. No se necesita instalar biblio
 ## Comprobación manual
 
 Introducir en el formulario los cinco ejemplos de la tabla anterior y comprobar que cada uno devuelve el estado esperado.
+
+## Pruebas y publicación
+
+```sh
+python -m unittest discover -s tests -v
+```
+
+GitHub Actions ejecuta la misma suite en los PR hacia `main` y tras cada actualización de `main`. En los PR que salen de ramas del repositorio, publica un comentario antes de las pruebas y otro si terminan correctamente. En `main`, tras pasar las pruebas, construye la imagen y la publica en `ghcr.io/<propietario-en-minúsculas>/salud-mlops-u2:<sha-del-commit>`. La pestaña **Actions** muestra la ejecución y **Packages** muestra las imágenes publicadas.
